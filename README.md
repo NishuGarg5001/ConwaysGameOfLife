@@ -8,16 +8,16 @@ Pre-requisites:
 
 Features:
 -Seed indexing of initial configurations based on MxNxD
- Where M and N are the grid width and height respectively and D is the decimal representation of
+ Where M and N are the grid width and height respectively and D is the hex representation of
  2^(MN)-bit unsigned integer.
--Max 8x8 grid size. --> Change in constants.h
--Black and White themes. --> Change in constants.h --> theme to "black" or "white"
+-Choose between Black and White themes from pause menu.
 
 Controls:
-1.Enter to select a menu item, start/stop simulation
-2.UP/DOWN arrow keys to move through menu items
-3.LEFT/RIGHT arrow keys to select seeds
-4.Press 'R' to reset current seed to original configuration.
+1.Enter to select a menu item, start/stop simulation.
+2.UP/DOWN arrow keys to move through menu items.
+3.LEFT/RIGHT arrow keys to decrease/increase seeds.
+4.WASD keys to adjust grid size.
+5.Press 'R' to reset current seed to original configuration.
 
 Build using (g++ example):
 g++ -std=c++20 main.cpp -o main.exe -L<path to libraries> -lSDL3 -lSDL3_image -lSDL3_ttf -mwindows

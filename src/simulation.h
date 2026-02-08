@@ -3,7 +3,55 @@
 
 #include "menu.h"
 
-static_assert(CELLS>0, "Number of cells should be greater than 0!");
+//static_assert(cells>0, "Number of cells should be greater than 0!");
+
+std::string addHexNumbers(const std::string& s1, const std::string& s2)
+{
+    int carry = 0;
+    int i = s1.size() - 1;
+    int j = s2.size() - 1;
+    std::string res = "";
+    while(carry != 0 || i >= 0 || j >= 0)
+    {
+        int sum = carry;
+
+        if(i >= 0)
+            sum += hex_to_decimal_map.at(s1[i--]);
+
+        if(j >= 0)
+            sum += hex_to_decimal_map.at(s2[j--]);
+        res.push_back(decimal_to_hex_map.at(sum % 16));
+        carry = sum / 16;
+    }
+    std::reverse(res.begin(), res.end());
+    return res;
+}
+
+std::string subtractHexNumbers(std::string s1, const std::string& s2)
+{
+    int i = static_cast<int>(s1.size()) - 1;
+    int j = static_cast<int>(s2.size()) - 1;
+    int u;
+    while(j >= 0)
+    {
+        if((hex_to_decimal_map.at(s1[i])) < (hex_to_decimal_map.at(s2[j])))
+        {
+            u = i - 1;
+            while(u >= 0 && s1[u] == '0')
+                u--;
+            s1[u] = decimal_to_hex_map.at(hex_to_decimal_map.at(s1[u]) - 1);
+            while(u!=(i-1))
+                s1[++u] = 'F';
+            s1[i] = decimal_to_hex_map.at(hex_to_decimal_map.at(s1[i]) + 16 - hex_to_decimal_map.at(s2[j--]));
+        }
+        else
+            s1[i] = decimal_to_hex_map.at(hex_to_decimal_map.at(s1[i]) - hex_to_decimal_map.at(s2[j--]));
+        i--;
+    }
+    while(s1.size() >= 2 && s1[0] == '0')
+        s1.erase(0, 1);
+    return s1;
+}
 
 class Simulation
 {
@@ -13,17 +61,26 @@ class Simulation
     std::string command = "";
     int fps = 60;
     int frame_time = 1000 / fps;
-    unsigned long long int seed_counter = 0;
-    std::string seed_counter_binary_str = std::string(CELLS, '0');
+    size_t grid_width = 8;
+    size_t grid_height = 8;
+    size_t cells = grid_width * grid_height;
+    std::string seed_counter = "0";
+    std::string seed_counter_binary = "0";
     bool simulation_state = false;
-    std::array<std::array<int, GRID_WIDTH>, GRID_HEIGHT> life_grid = {0};
-    std::array<std::array<int, GRID_WIDTH>, GRID_HEIGHT> state_buffer = {0};
+    bool is_black_theme = false;
+    std::vector<std::vector<int>> life_grid;
+    std::vector<std::vector<int>> state_buffer;
     SimulationState code_state = SimulationState::MAIN;
     Menu main_menu = Menu({"Simulate", "Quit"}, MAIN_MENU_BOX_WIDTH, MAIN_MENU_BOX_HEIGHT);
-    Menu pause_menu =  Menu({"Continue", "Seed", "Quit to Main Menu"}, PAUSE_MENU_BOX_WIDTH, PAUSE_MENU_BOX_HEIGHT);
+    Menu pause_menu =  Menu({"Continue", "Seed", "Switch Theme", "Quit to Main Menu"}, PAUSE_MENU_BOX_WIDTH, PAUSE_MENU_BOX_HEIGHT);
     Menu seed_menu = Menu({"Seed"}, SEED_MENU_BOX_WIDTH, SEED_MENU_BOX_HEIGHT);
     public:
-        Simulation(){}
+        Simulation() :
+        life_grid(grid_height, std::vector<int>(grid_width, 0)),
+        state_buffer(grid_height, std::vector<int>(grid_width, 0))
+        {
+            seed_counter_binary.reserve(cells);
+        }
 
         void handleInput()
         {
@@ -91,6 +148,8 @@ class Simulation
                                         code_state = SimulationState::SEED;
                                         SDL_StartTextInput(window);
                                     }
+                                    else if(pause_menu_item_name == "Switch Theme")
+                                        is_black_theme = !is_black_theme;
                                     else
                                         code_state = SimulationState::MAIN;
                                     break;
@@ -124,12 +183,11 @@ class Simulation
                                     }
                                     case SDLK_RETURN:
                                     {
-                                        if(!command.empty() && isDigit(command))
+                                        if(!command.empty() && isHex(command))
                                         {
-                                            auto x = std::stoull(command);
-                                            if(x <= LAST_STATE_INDEX)
+                                            if(hexToBinary(command).size() <= cells)
                                             {
-                                                setSeed(x);
+                                                setSeed(command);
                                                 command.clear();
                                                 SDL_StopTextInput(window);
                                                 code_state = SimulationState::RUNNING;
@@ -156,18 +214,34 @@ class Simulation
                     {
                         if(event.type == SDL_EVENT_KEY_DOWN)
                         {
-                            if(event.key.key == SDLK_LEFT || event.key.key == SDLK_RIGHT)
+                            if(event.key.key == SDLK_LEFT || event.key.key == SDLK_RIGHT ||
+                               event.key.key == SDLK_W || event.key.key == SDLK_A ||
+                               event.key.key == SDLK_S || event.key.key == SDLK_D)
                             {
                                 if(event.key.key == SDLK_LEFT)
                                 {
-                                    if(seed_counter > 0)
-                                        setSeed(seed_counter - 1);
+                                    if(seed_counter != "0")
+                                        setSeed(subtractHexNumbers(seed_counter, "1"));
+                                }
+                                else if(event.key.key == SDLK_RIGHT)
+                                {
+                                    if(hexToBinary(addHexNumbers(seed_counter, "1")).size() <= cells)
+                                        setSeed(addHexNumbers(seed_counter, "1"));
+                                }
+                                else if(event.key.key == SDLK_W)
+                                    changeGrid(grid_width, grid_height + 1);
+                                else if(event.key.key == SDLK_A)
+                                {
+                                    if(grid_width > 1)
+                                        changeGrid(grid_width - 1, grid_height);
+                                }
+                                else if(event.key.key == SDLK_S)
+                                {
+                                    if(grid_height > 1)
+                                        changeGrid(grid_width, grid_height - 1);
                                 }
                                 else
-                                {
-                                    if(seed_counter < LAST_STATE_INDEX)
-                                        setSeed(seed_counter + 1);
-                                }
+                                    changeGrid(grid_width + 1, grid_height);
                             }
                             else if(!event.key.repeat)
                             {
@@ -201,54 +275,65 @@ class Simulation
             }
         }
 
-        void binarize(unsigned long long int k, std::string& x)
-        {
-            x.assign(CELLS, '0');
-            size_t count = CELLS - 1;
-            while(k > 0)
-            {
-                x[count] = k % 2 + '0';
-                k = k/2;
-                count--;
-            }
-        }
-
-        bool isDigit(const std::string& s)
+        bool isHex(const std::string& s)
         {
             for (char c : s)
-                if (c < '0' || c > '9')
+                if (!((c >= '0' && c <= '9') || (c >= 'A' && c <= 'F')))
                     return false;
             return true;
         }
 
-        void newSim()
+        std::string hexToBinary(const std::string& hex)
         {
-            seed_counter = 0;
-            seed_counter_binary_str.assign(CELLS, '0');
-            simulation_state = false;
-            life_grid = {0};
-            state_buffer = {0};
+            std::string res = "";
+
+            for(const char s : hex)
+                res = res + hex_to_binary_map.at(s);
+
+            while(res.size() >= 2 && res[0] == '0')
+                res.erase(0, 1);
+
+            return res;
         }
 
-        void setSeed(unsigned long long int x)
+        void newSim()
+        {
+            seed_counter = "0";
+            simulation_state = false;
+            life_grid = std::vector(grid_height, std::vector<int>(grid_width, 0));
+            state_buffer = std::vector(grid_height, std::vector<int>(grid_width, 0));
+        }
+
+        void setSeed(std::string x)
         {
             seed_counter = x;
-            binarize(seed_counter, seed_counter_binary_str);
-            for(size_t i=0; i<CELLS; i++)
+            seed_counter_binary = hexToBinary(seed_counter);
+            if(seed_counter_binary.size() < cells)
+                seed_counter_binary = std::string(cells - seed_counter_binary.size(), '0') + seed_counter_binary;
+
+            for(size_t i = cells; i-- > 0;)
             {
-                size_t row = i / GRID_WIDTH;
-                size_t col = i % GRID_WIDTH;
-                life_grid[row][col] = (seed_counter_binary_str[i] == '1');
+                size_t row = i / grid_width;
+                size_t col = i % grid_width;
+                life_grid[row][col] = (seed_counter_binary[i] == '1');
             }
+        }
+
+        void changeGrid(size_t x, size_t y)
+        {
+            grid_width = x;
+            grid_height = y;
+            cells = grid_width * grid_height;
+            newSim();
         }
 
         void updateState()
         {
-            for(size_t i=0; i<GRID_HEIGHT; i++)
-                for(size_t j=0; j<GRID_WIDTH; j++)
+            for(size_t i=0; i<grid_height; i++)
+                for(size_t j=0; j<grid_width; j++)
                 {
                     size_t counter = 0;
-                    if(i > 0 && i < (GRID_HEIGHT - 1) && j > 0 && j < (GRID_WIDTH - 1)) //middle section 8 neighbours
+                    if(i > 0 && i < (grid_height - 1) && j > 0 && j < (grid_width - 1)) //middle section 8 neighbours
                     {
                         if(life_grid[i-1][j-1] == 1)
                             counter++;
@@ -278,7 +363,7 @@ class Simulation
                         else
                             state_buffer[i][j] = 0;
                     }
-                    else if(i == 0 && !(j == 0 || j == (GRID_WIDTH - 1))) //top row 5 neighbours
+                    else if(i == 0 && !(j == 0 || j == (grid_width - 1))) //top row 5 neighbours
                     {
                         if(life_grid[i][j-1] == 1)
                             counter++;
@@ -303,7 +388,7 @@ class Simulation
                             state_buffer[i][j] = 0;
                     }
 
-                    else if(i == (GRID_HEIGHT - 1) && !(j == 0 || j == (GRID_WIDTH - 1))) //bottom row 5 neighbours
+                    else if(i == (grid_height - 1) && !(j == 0 || j == (grid_width - 1))) //bottom row 5 neighbours
                     {
                         if(life_grid[i][j-1] == 1)
                             counter++;
@@ -328,7 +413,7 @@ class Simulation
                             state_buffer[i][j] = 0;
                     }
 
-                    else if(j == 0 && !(i == 0 || i == (GRID_HEIGHT - 1))) //left column 5 neighbours
+                    else if(j == 0 && !(i == 0 || i == (grid_height - 1))) //left column 5 neighbours
                     {
                         if(life_grid[i+1][j] == 1)
                             counter++;
@@ -353,7 +438,7 @@ class Simulation
                             state_buffer[i][j] = 0;
                     }
 
-                    else if(j == (GRID_WIDTH - 1) && !(i == 0 || i == (GRID_HEIGHT - 1))) //right column 5 neighbours
+                    else if(j == (grid_width - 1) && !(i == 0 || i == (grid_height - 1))) //right column 5 neighbours
                     {
                         if(life_grid[i+1][j] == 1)
                             counter++;
@@ -399,7 +484,7 @@ class Simulation
                             state_buffer[i][j] = 0;
                     }
 
-                    else if(i == 0 && j == (GRID_WIDTH - 1)) //top right corner 3 neighbours
+                    else if(i == 0 && j == (grid_width - 1)) //top right corner 3 neighbours
                     {
                         if(life_grid[i][j-1] == 1)
                             counter++;
@@ -420,7 +505,7 @@ class Simulation
                             state_buffer[i][j] = 0;
                     }
 
-                    else if(i == (GRID_HEIGHT - 1) && j == 0) //bottom left corner 3 neighbours
+                    else if(i == (grid_height - 1) && j == 0) //bottom left corner 3 neighbours
                     {
                         if(life_grid[i-1][j] == 1)
                             counter++;
@@ -441,7 +526,7 @@ class Simulation
                             state_buffer[i][j] = 0;
                     }
 
-                    else if(i == (GRID_HEIGHT - 1) && j == (GRID_WIDTH - 1)) //bottom right corner 3 neighbours
+                    else if(i == (grid_height - 1) && j == (grid_width - 1)) //bottom right corner 3 neighbours
                     {
                         if(life_grid[i-1][j] == 1)
                             counter++;
@@ -473,13 +558,10 @@ class Simulation
             return static_cast<size_t>(w);
         }
 
-        void drawText(const std::string& text, float x, float y)
+        void drawText(const std::string& text, float x, float y, SDL_Color color)
         {
             SDL_Surface* text_surface;
-            if(theme == "black")
-                text_surface = TTF_RenderText_Blended(font, (text).c_str(), strlen(text.c_str()), BLACK);
-            else
-                text_surface = TTF_RenderText_Blended(font, (text).c_str(), strlen(text.c_str()), WHITE);
+            text_surface = TTF_RenderText_Blended(font, (text).c_str(), strlen(text.c_str()), color);
             SDL_Texture* text_texture = SDL_CreateTextureFromSurface(renderer, text_surface);
             SDL_DestroySurface(text_surface);
             float w = static_cast<float>(getTextLen(text));
@@ -490,7 +572,7 @@ class Simulation
 
         void renderFrame()
         {
-            if(theme == "black")
+            if(is_black_theme)
                 SDL_SetRenderDrawColor(renderer, WHITE.r, WHITE.g, WHITE.b, WHITE.a);
             else
                 SDL_SetRenderDrawColor(renderer, BLACK.r, BLACK.g, BLACK.b, BLACK.a);
@@ -510,19 +592,22 @@ class Simulation
                 case SimulationState::SEED:
                 {
                     seed_menu.renderMenu(renderer, font);
-                    drawText(command, seed_menu.getMenuPosX(), seed_menu.getMenuPosY() + FONT_SIZE);
+                    drawText(command, seed_menu.getMenuPosX(), seed_menu.getMenuPosY() + FONT_SIZE, WHITE);
                     break;
                 }
                 case SimulationState::RUNNING:
                 {
-                    if(theme == "black")
+                    if(is_black_theme)
                         SDL_SetRenderDrawColor(renderer, BLACK.r, BLACK.g, BLACK.b, BLACK.a);
                     else
                         SDL_SetRenderDrawColor(renderer, WHITE.r, WHITE.g, WHITE.b, WHITE.a);
 
-                    std::string text = "Seed: " + std::to_string(GRID_WIDTH) + "x" + std::to_string(GRID_HEIGHT) + "x" + std::to_string(seed_counter);
+                    std::string text = "Seed: " + std::to_string(grid_width) + "x" + std::to_string(grid_height) + "x" + seed_counter;
                     size_t w = getTextLen(text);
-                    drawText(text, static_cast<float>(SCREEN_WIDTH - 1 - w), 0.0f);
+                    if(is_black_theme)
+                        drawText(text, static_cast<float>(SCREEN_WIDTH - 1 - w), 0.0f, BLACK);
+                    else
+                        drawText(text, static_cast<float>(SCREEN_WIDTH - 1 - w), 0.0f, WHITE);
 
                     std::string text2;
                     if(simulation_state)
@@ -530,17 +615,20 @@ class Simulation
                     else
                         text2 = "Simulation: OFF";
                     w = getTextLen(text2);
-                    drawText(text2, static_cast<float>(SCREEN_WIDTH - 1 - w), FONT_SIZE);
+                    if(is_black_theme)
+                        drawText(text2, static_cast<float>(SCREEN_WIDTH - 1 - w), FONT_SIZE, BLACK);
+                    else
+                        drawText(text2, static_cast<float>(SCREEN_WIDTH - 1 - w), FONT_SIZE, WHITE);
 
                     SDL_FRect dst;
-                    for(size_t i=0; i<=GRID_HEIGHT; i++)
+                    for(size_t i=0; i<=grid_height; i++)
                     {
-                        SDL_RenderLine(renderer, 0, static_cast<float>(i*PIXEL_SIZE), (GRID_WIDTH)*PIXEL_SIZE, static_cast<float>(i*PIXEL_SIZE));
-                        for(size_t j=0; j<=GRID_WIDTH; j++)
-                            SDL_RenderLine(renderer, static_cast<float>(j*PIXEL_SIZE), 0, static_cast<float>(j*PIXEL_SIZE), (GRID_HEIGHT)*PIXEL_SIZE);
+                        SDL_RenderLine(renderer, 0, static_cast<float>(i*PIXEL_SIZE), (grid_width)*PIXEL_SIZE, static_cast<float>(i*PIXEL_SIZE));
+                        for(size_t j=0; j<=grid_width; j++)
+                            SDL_RenderLine(renderer, static_cast<float>(j*PIXEL_SIZE), 0, static_cast<float>(j*PIXEL_SIZE), (grid_height)*PIXEL_SIZE);
                     }
-                    for(size_t i=0; i<GRID_HEIGHT; i++)
-                        for(size_t j=0; j<GRID_WIDTH; j++)
+                    for(size_t i=0; i<grid_height; i++)
+                        for(size_t j=0; j<grid_width; j++)
                             if(life_grid[i][j])
                             {
                                 dst = {static_cast<float>(j*PIXEL_SIZE), static_cast<float>(i*PIXEL_SIZE), PIXEL_SIZE, PIXEL_SIZE};

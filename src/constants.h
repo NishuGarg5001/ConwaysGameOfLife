@@ -29,23 +29,12 @@ constexpr Uint64 TICK = 1000;
 constexpr size_t MAIN_MENU_BOX_WIDTH = 120;
 constexpr size_t MAIN_MENU_BOX_HEIGHT = static_cast<size_t>(FONT_SIZE * 2.0f + 0.2f * FONT_SIZE);
 constexpr size_t PAUSE_MENU_BOX_WIDTH = 205;
-constexpr size_t PAUSE_MENU_BOX_HEIGHT = static_cast<size_t>(FONT_SIZE * 3.0f + 0.2f * FONT_SIZE);
+constexpr size_t PAUSE_MENU_BOX_HEIGHT = static_cast<size_t>(FONT_SIZE * 4.0f + 0.2f * FONT_SIZE);
 constexpr size_t SEED_MENU_BOX_WIDTH = 205;
 constexpr size_t SEED_MENU_BOX_HEIGHT = static_cast<size_t>(FONT_SIZE * 2.0f + 0.2f * FONT_SIZE);
 
 //pixel size
 constexpr size_t PIXEL_SIZE = 16;
-
-//grid size
-constexpr size_t GRID_HEIGHT = 8;
-constexpr size_t GRID_WIDTH = 8;
-constexpr size_t CELLS = GRID_HEIGHT * GRID_WIDTH;
-static_assert(CELLS<=64, "Grid cannot be larger than 8x8");
-constexpr size_t LAST_STATE_INDEX = CELLS < 64 ? (size_t(1) << CELLS) - 1 : 18446744073709551615;
-//18446744073709551615 = 2^64 - 1
-
-//probability
-constexpr float p = 0.1;
 
 //colors
 constexpr SDL_Color WHITE = {255, 255, 255, 255};
@@ -67,6 +56,66 @@ enum class SimulationState : int
     MAIN,
     PAUSE,
     SEED
+};
+
+const std::unordered_map<char, std::string> hex_to_binary_map
+{
+    {'0', "0000"},
+    {'1', "0001"},
+    {'2', "0010"},
+    {'3', "0011"},
+    {'4', "0100"},
+    {'5', "0101"},
+    {'6', "0110"},
+    {'7', "0111"},
+    {'8', "1000"},
+    {'9', "1001"},
+    {'A', "1010"},
+    {'B', "1011"},
+    {'C', "1100"},
+    {'D', "1101"},
+    {'E', "1110"},
+    {'F', "1111"},
+};
+
+const std::unordered_map<char, int> hex_to_decimal_map
+{
+    {'0', 0},
+    {'1', 1},
+    {'2', 2},
+    {'3', 3},
+    {'4', 4},
+    {'5', 5},
+    {'6', 6},
+    {'7', 7},
+    {'8', 8},
+    {'9', 9},
+    {'A', 10},
+    {'B', 11},
+    {'C', 12},
+    {'D', 13},
+    {'E', 14},
+    {'F', 15},
+};
+
+const std::unordered_map<int, char> decimal_to_hex_map
+{
+    {0, '0'},
+    {1, '1'},
+    {2, '2'},
+    {3, '3'},
+    {4, '4'},
+    {5, '5'},
+    {6, '6'},
+    {7, '7'},
+    {8, '8'},
+    {9, '9'},
+    {10, 'A'},
+    {11, 'B'},
+    {12, 'C'},
+    {13, 'D'},
+    {14, 'E'},
+    {15, 'F'},
 };
 
 #endif
