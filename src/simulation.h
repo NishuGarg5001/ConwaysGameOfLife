@@ -329,224 +329,33 @@ class Simulation
 
         void updateState()
         {
-            for(size_t i=0; i<grid_height; i++)
-                for(size_t j=0; j<grid_width; j++)
+            for (size_t i = 0; i < grid_height; ++i)
+            {
+                for (size_t j = 0; j < grid_width; ++j)
                 {
-                    size_t counter = 0;
-                    if(i > 0 && i < (grid_height - 1) && j > 0 && j < (grid_width - 1)) //middle section 8 neighbours
+                    int counter = 0;
+                    for (int di = -1; di <= 1; ++di)
                     {
-                        if(life_grid[i-1][j-1] == 1)
-                            counter++;
-                        if(life_grid[i-1][j] == 1)
-                            counter++;
-                        if(life_grid[i-1][j+1] == 1)
-                            counter++;
-                        if(life_grid[i][j-1] == 1)
-                            counter++;
-                        if(life_grid[i][j+1] == 1)
-                            counter++;
-                        if(life_grid[i+1][j-1] == 1)
-                            counter++;
-                        if(life_grid[i+1][j] == 1)
-                            counter++;
-                        if(life_grid[i+1][j+1] == 1)
-                            counter++;
-                        if(life_grid[i][j] == 1)
+                        for (int dj = -1; dj <= 1; ++dj)
                         {
-                            if(counter < 2 || counter > 3)
-                                state_buffer[i][j] = 0;
-                            else
-                                state_buffer[i][j] = 1;
+                            if (di == 0 && dj == 0)
+                                continue;
+
+                            int ni = static_cast<int>(i) + di;
+                            int nj = static_cast<int>(j) + dj;
+
+                            if (ni >= 0 && ni < static_cast<int>(grid_height) &&
+                                nj >= 0 && nj < static_cast<int>(grid_width))
+                                    counter += life_grid[ni][nj];
                         }
-                        else if(counter == 3)
-                            state_buffer[i][j] = 1;
-                        else
-                            state_buffer[i][j] = 0;
-                    }
-                    else if(i == 0 && !(j == 0 || j == (grid_width - 1))) //top row 5 neighbours
-                    {
-                        if(life_grid[i][j-1] == 1)
-                            counter++;
-                        if(life_grid[i][j+1] == 1)
-                            counter++;
-                        if(life_grid[i+1][j-1] == 1)
-                            counter++;
-                        if(life_grid[i+1][j] == 1)
-                            counter++;
-                        if(life_grid[i+1][j+1] == 1)
-                            counter++;
-                        if(life_grid[i][j] == 1)
-                        {
-                            if(counter < 2 || counter > 3)
-                                state_buffer[i][j] = 0;
-                            else
-                                state_buffer[i][j] = 1;
-                        }
-                        else if(counter == 3)
-                            state_buffer[i][j] = 1;
-                        else
-                            state_buffer[i][j] = 0;
                     }
 
-                    else if(i == (grid_height - 1) && !(j == 0 || j == (grid_width - 1))) //bottom row 5 neighbours
-                    {
-                        if(life_grid[i][j-1] == 1)
-                            counter++;
-                        if(life_grid[i][j+1] == 1)
-                            counter++;
-                        if(life_grid[i-1][j-1] == 1)
-                            counter++;
-                        if(life_grid[i-1][j] == 1)
-                            counter++;
-                        if(life_grid[i-1][j+1] == 1)
-                            counter++;
-                        if(life_grid[i][j] == 1)
-                        {
-                            if(counter < 2 || counter > 3)
-                                state_buffer[i][j] = 0;
-                            else
-                                state_buffer[i][j] = 1;
-                        }
-                        else if(counter == 3)
-                            state_buffer[i][j] = 1;
-                        else
-                            state_buffer[i][j] = 0;
-                    }
-
-                    else if(j == 0 && !(i == 0 || i == (grid_height - 1))) //left column 5 neighbours
-                    {
-                        if(life_grid[i+1][j] == 1)
-                            counter++;
-                        if(life_grid[i-1][j] == 1)
-                            counter++;
-                        if(life_grid[i-1][j+1] == 1)
-                            counter++;
-                        if(life_grid[i][j+1] == 1)
-                            counter++;
-                        if(life_grid[i+1][j+1] == 1)
-                            counter++;
-                        if(life_grid[i][j] == 1)
-                        {
-                            if(counter < 2 || counter > 3)
-                                state_buffer[i][j] = 0;
-                            else
-                                state_buffer[i][j] = 1;
-                        }
-                        else if(counter == 3)
-                            state_buffer[i][j] = 1;
-                        else
-                            state_buffer[i][j] = 0;
-                    }
-
-                    else if(j == (grid_width - 1) && !(i == 0 || i == (grid_height - 1))) //right column 5 neighbours
-                    {
-                        if(life_grid[i+1][j] == 1)
-                            counter++;
-                        if(life_grid[i-1][j] == 1)
-                            counter++;
-                        if(life_grid[i-1][j-1] == 1)
-                            counter++;
-                        if(life_grid[i][j-1] == 1)
-                            counter++;
-                        if(life_grid[i+1][j-1] == 1)
-                            counter++;
-                        if(life_grid[i][j] == 1)
-                        {
-                            if(counter < 2 || counter > 3)
-                                state_buffer[i][j] = 0;
-                            else
-                                state_buffer[i][j] = 1;
-                        }
-                        else if(counter == 3)
-                            state_buffer[i][j] = 1;
-                        else
-                            state_buffer[i][j] = 0;
-                    }
-
-                    else if(i == 0 && j==0) //top left corner 3 neighbours
-                    {
-                        if(life_grid[i+1][j+1] == 1)
-                            counter++;
-                        if(life_grid[i+1][j] == 1)
-                            counter++;
-                        if(life_grid[i][j+1] == 1)
-                            counter++;
-                        if(life_grid[i][j] == 1)
-                        {
-                            if(counter < 2 || counter > 3)
-                                state_buffer[i][j] = 0;
-                            else
-                                state_buffer[i][j] = 1;
-                        }
-                        else if(counter == 3)
-                            state_buffer[i][j] = 1;
-                        else
-                            state_buffer[i][j] = 0;
-                    }
-
-                    else if(i == 0 && j == (grid_width - 1)) //top right corner 3 neighbours
-                    {
-                        if(life_grid[i][j-1] == 1)
-                            counter++;
-                        if(life_grid[i+1][j] == 1)
-                            counter++;
-                        if(life_grid[i+1][j-1] == 1)
-                            counter++;
-                        if(life_grid[i][j] == 1)
-                        {
-                            if(counter < 2 || counter > 3)
-                                state_buffer[i][j] = 0;
-                            else
-                                state_buffer[i][j] = 1;
-                        }
-                        else if(counter == 3)
-                            state_buffer[i][j] = 1;
-                        else
-                            state_buffer[i][j] = 0;
-                    }
-
-                    else if(i == (grid_height - 1) && j == 0) //bottom left corner 3 neighbours
-                    {
-                        if(life_grid[i-1][j] == 1)
-                            counter++;
-                        if(life_grid[i][j+1] == 1)
-                            counter++;
-                        if(life_grid[i-1][j+1] == 1)
-                            counter++;
-                        if(life_grid[i][j] == 1)
-                        {
-                            if(counter < 2 || counter > 3)
-                                state_buffer[i][j] = 0;
-                            else
-                                state_buffer[i][j] = 1;
-                        }
-                        else if(counter == 3)
-                            state_buffer[i][j] = 1;
-                        else
-                            state_buffer[i][j] = 0;
-                    }
-
-                    else if(i == (grid_height - 1) && j == (grid_width - 1)) //bottom right corner 3 neighbours
-                    {
-                        if(life_grid[i-1][j] == 1)
-                            counter++;
-                        if(life_grid[i][j-1] == 1)
-                            counter++;
-                        if(life_grid[i-1][j-1] == 1)
-                            counter++;
-                        if(life_grid[i][j] == 1)
-                        {
-                            if(counter < 2 || counter > 3)
-                                state_buffer[i][j] = 0;
-                            else
-                                state_buffer[i][j] = 1;
-                        }
-                        else if(counter == 3)
-                            state_buffer[i][j] = 1;
-                        else
-                            state_buffer[i][j] = 0;
-                    }
+                    if (life_grid[i][j])
+                        state_buffer[i][j] = (counter == 2 || counter == 3);
+                    else
+                        state_buffer[i][j] = (counter == 3);
                 }
+            }
             life_grid = state_buffer;
         }
 
