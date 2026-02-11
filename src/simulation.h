@@ -5,7 +5,7 @@
 
 //static_assert(cells>0, "Number of cells should be greater than 0!");
 
-std::string addHexNumbers(const std::string& s1, const std::string& s2)
+std::string addHexNumbers(std::string_view s1, std::string_view s2)
 {
     int carry = 0;
     int i = s1.size() - 1;
@@ -27,7 +27,7 @@ std::string addHexNumbers(const std::string& s1, const std::string& s2)
     return res;
 }
 
-std::string subtractHexNumbers(std::string s1, const std::string& s2)
+std::string subtractHexNumbers(std::string s1, std::string_view s2)
 {
     int i = static_cast<int>(s1.size()) - 1;
     int j = static_cast<int>(s2.size()) - 1;
@@ -64,6 +64,10 @@ class Simulation
     size_t grid_width = 8;
     size_t grid_height = 8;
     size_t cells = grid_width * grid_height;
+    size_t epoch = 1;
+    std::string lifetime = "N/A";
+    std::string period = "N/A";
+    std::string period_class = "N/A";
     std::string seed_counter = "0";
     std::string seed_counter_binary = "0";
     bool simulation_state = false;
@@ -80,6 +84,8 @@ class Simulation
         state_buffer(grid_height, std::vector<int>(grid_width, 0))
         {
             seed_counter_binary.reserve(cells);
+            if(seed_counter_binary.size() < cells)
+                seed_counter_binary = std::string(cells - seed_counter_binary.size(), '0') + seed_counter_binary;
         }
 
         void handleInput()
@@ -215,6 +221,7 @@ class Simulation
                         if(event.type == SDL_EVENT_KEY_DOWN)
                         {
                             if(event.key.key == SDLK_LEFT || event.key.key == SDLK_RIGHT ||
+                               event.key.key == SDLK_UP || event.key.key == SDLK_DOWN ||
                                event.key.key == SDLK_W || event.key.key == SDLK_A ||
                                event.key.key == SDLK_S || event.key.key == SDLK_D)
                             {
@@ -228,18 +235,28 @@ class Simulation
                                     if(hexToBinary(addHexNumbers(seed_counter, "1")).size() <= cells)
                                         setSeed(addHexNumbers(seed_counter, "1"));
                                 }
+                                else if(event.key.key == SDLK_UP)
+                                {
+                                    if(hexToBinary(addHexNumbers(seed_counter, "FFFF")).size() <= cells)
+                                        setSeed(addHexNumbers(seed_counter, "FFFF"));
+                                }
+                                else if(event.key.key == SDLK_DOWN)
+                                {
+                                    if(seed_counter.size() > 4 || (seed_counter.size() == 4 && hex_to_decimal_map.at(seed_counter[0]) == 15 && hex_to_decimal_map.at(seed_counter[1]) == 15 && hex_to_decimal_map.at(seed_counter[2]) == 15 && hex_to_decimal_map.at(seed_counter[3]) == 15))
+                                        setSeed(subtractHexNumbers(seed_counter, "FFFF"));
+                                }
                                 else if(event.key.key == SDLK_W)
-                                    changeGrid(grid_width, grid_height + 1);
+                                {
+                                    if(grid_height > 1)
+                                        changeGrid(grid_width, grid_height - 1);
+                                }
                                 else if(event.key.key == SDLK_A)
                                 {
                                     if(grid_width > 1)
                                         changeGrid(grid_width - 1, grid_height);
                                 }
                                 else if(event.key.key == SDLK_S)
-                                {
-                                    if(grid_height > 1)
-                                        changeGrid(grid_width, grid_height - 1);
-                                }
+                                    changeGrid(grid_width, grid_height + 1);
                                 else
                                     changeGrid(grid_width + 1, grid_height);
                             }
@@ -259,7 +276,12 @@ class Simulation
                                     }
                                     case SDLK_R:
                                     {
-                                        setSeed(seed_counter);
+                                        resetSeed();
+                                        break;
+                                    }
+                                    case SDLK_P:
+                                    {
+                                        evaluateParams();
                                         break;
                                     }
                                     default:
@@ -275,7 +297,7 @@ class Simulation
             }
         }
 
-        bool isHex(const std::string& s)
+        bool isHex(std::string_view s)
         {
             for (char c : s)
                 if (!((c >= '0' && c <= '9') || (c >= 'A' && c <= 'F')))
@@ -283,7 +305,7 @@ class Simulation
             return true;
         }
 
-        std::string hexToBinary(const std::string& hex)
+        std::string hexToBinary(std::string_view hex)
         {
             std::string res = "";
 
@@ -299,15 +321,34 @@ class Simulation
         void newSim()
         {
             seed_counter = "0";
+            epoch = 1;
+            lifetime = "N/A";
+            period = "N/A";
+            period_class = "N/A";
             simulation_state = false;
             life_grid = std::vector(grid_height, std::vector<int>(grid_width, 0));
             state_buffer = std::vector(grid_height, std::vector<int>(grid_width, 0));
         }
 
+        void resetSeed()
+        {
+            epoch = 1;
+            simulation_state = false;
+            for(size_t i = cells; i-- > 0;)
+            {
+                size_t row = i / grid_width;
+                size_t col = i % grid_width;
+                life_grid[row][col] = (seed_counter_binary[i] == '1');
+            }
+            state_buffer = std::vector(grid_height, std::vector<int>(grid_width, 0));
+        }
+
         void setSeed(std::string x)
         {
+            newSim();
             seed_counter = x;
             seed_counter_binary = hexToBinary(seed_counter);
+
             if(seed_counter_binary.size() < cells)
                 seed_counter_binary = std::string(cells - seed_counter_binary.size(), '0') + seed_counter_binary;
 
@@ -327,7 +368,71 @@ class Simulation
             newSim();
         }
 
-        void updateState()
+        void evaluateParams()
+        {
+            resetSeed();
+
+            bool pre_check = false;
+            for(const auto& row : life_grid)
+                for(int v : row)
+                    if(v == 1)
+                    {
+                        pre_check = true;
+                        break;
+                    }
+            if(!pre_check)
+            {
+                lifetime = "0";
+                period = "N/A";
+                return;
+            }
+
+            std::vector<std::vector<int>> virtual_life_grid = life_grid;
+            std::vector<std::vector<int>> virtual_state_buffer = state_buffer;
+            std::map<std::vector<std::vector<int>>, size_t> seen_map;
+            
+            size_t counter = 0;
+            seen_map[virtual_life_grid] = 0;
+            while(true)
+            {
+                evaluateState(virtual_life_grid, virtual_state_buffer);
+                counter++;
+
+                bool is_persistent = false;
+                for(const auto& row : virtual_state_buffer)
+                    for(int v : row)
+                        if(v == 1)
+                        {
+                            is_persistent = true;
+                            break;
+                        }
+
+                if(!is_persistent)
+                {
+                    lifetime = std::to_string(counter);
+                    period = "N/A";
+                    period_class = "N/A";
+                    break;
+                }
+
+                if (seen_map.count(virtual_state_buffer))
+                {
+                    lifetime = "Persistent from Epoch " + std::to_string(counter) + " onwards";
+                    int x = counter - seen_map[virtual_state_buffer];
+                    if(x == 1)
+                        period_class = "Still Life";
+                    else
+                        period_class = "Oscillator";
+                    period = std::to_string(x);
+                    break;
+                }
+
+                seen_map[virtual_state_buffer] = counter;
+                virtual_life_grid = virtual_state_buffer;
+            }
+        }
+
+        void evaluateState(const std::vector<std::vector<int>>& x, std::vector<std::vector<int>>& y)
         {
             for (size_t i = 0; i < grid_height; ++i)
             {
@@ -346,17 +451,23 @@ class Simulation
 
                             if (ni >= 0 && ni < static_cast<int>(grid_height) &&
                                 nj >= 0 && nj < static_cast<int>(grid_width))
-                                    counter += life_grid[ni][nj];
+                                    counter += x[ni][nj];
                         }
                     }
 
-                    if (life_grid[i][j])
-                        state_buffer[i][j] = (counter == 2 || counter == 3);
+                    if (x[i][j])
+                        y[i][j] = (counter == 2 || counter == 3);
                     else
-                        state_buffer[i][j] = (counter == 3);
+                        y[i][j] = (counter == 3);
                 }
             }
+        }
+
+        void updateState()
+        {
+            evaluateState(life_grid, state_buffer);
             life_grid = state_buffer;
+            epoch++;
         }
 
         size_t getTextLen(const std::string& text) const noexcept
@@ -411,23 +522,46 @@ class Simulation
                     else
                         SDL_SetRenderDrawColor(renderer, WHITE.r, WHITE.g, WHITE.b, WHITE.a);
 
-                    std::string text = "Seed: " + std::to_string(grid_width) + "x" + std::to_string(grid_height) + "x" + seed_counter;
-                    size_t w = getTextLen(text);
-                    if(is_black_theme)
-                        drawText(text, static_cast<float>(SCREEN_WIDTH - 1 - w), 0.0f, BLACK);
-                    else
-                        drawText(text, static_cast<float>(SCREEN_WIDTH - 1 - w), 0.0f, WHITE);
-
+                    std::string text = "Seed: " + std::to_string(grid_height) + "x" + std::to_string(grid_width) + "x" + seed_counter;
+                    size_t w1 = getTextLen(text);
+                        
                     std::string text2;
                     if(simulation_state)
                         text2 = "Simulation: ON";
                     else
                         text2 = "Simulation: OFF";
-                    w = getTextLen(text2);
+                    size_t w2 = getTextLen(text2);
+                    
+                    std::string text3 = "Epoch: " + std::to_string(epoch);
+                    size_t w3 = getTextLen(text3);
+
+                    std::string text4 = "Lifetime: " + lifetime;
+                    size_t w4 = getTextLen(text4);
+                    
+                    std::string text5 = "Class: " + period_class;
+                    size_t w5 = getTextLen(text5);
+
+                    std::string text6 = "Period: " + period;
+                    size_t w6 = getTextLen(text6);
+
                     if(is_black_theme)
-                        drawText(text2, static_cast<float>(SCREEN_WIDTH - 1 - w), FONT_SIZE, BLACK);
+                    {
+                        drawText(text, static_cast<float>(SCREEN_WIDTH - 1 - w1), 0.0f, BLACK);
+                        drawText(text2, static_cast<float>(SCREEN_WIDTH - 1 - w2), FONT_SIZE, BLACK);
+                        drawText(text3, static_cast<float>(SCREEN_WIDTH - 1 - w3), FONT_SIZE*2, BLACK);
+                        drawText(text4, static_cast<float>(SCREEN_WIDTH - 1 - w4), FONT_SIZE*3, BLACK);
+                        drawText(text5, static_cast<float>(SCREEN_WIDTH - 1 - w5), FONT_SIZE*4, BLACK);
+                        drawText(text6, static_cast<float>(SCREEN_WIDTH - 1 - w6), FONT_SIZE*5, BLACK);
+                    }
                     else
-                        drawText(text2, static_cast<float>(SCREEN_WIDTH - 1 - w), FONT_SIZE, WHITE);
+                    {
+                        drawText(text, static_cast<float>(SCREEN_WIDTH - 1 - w1), 0.0f, WHITE);
+                        drawText(text2, static_cast<float>(SCREEN_WIDTH - 1 - w2), FONT_SIZE, WHITE);
+                        drawText(text3, static_cast<float>(SCREEN_WIDTH - 1 - w3), FONT_SIZE*2, WHITE);
+                        drawText(text4, static_cast<float>(SCREEN_WIDTH - 1 - w4), FONT_SIZE*3, WHITE);
+                        drawText(text5, static_cast<float>(SCREEN_WIDTH - 1 - w5), FONT_SIZE*4, WHITE);
+                        drawText(text6, static_cast<float>(SCREEN_WIDTH - 1 - w6), FONT_SIZE*5, WHITE);
+                    }
 
                     SDL_FRect dst;
                     for(size_t i=0; i<=grid_height; i++)

@@ -1,3 +1,17 @@
+V 3.1
+-Fixed seed notation to correctly show row x column x seed hex instead of wrongly showing column x row x seed hex
+-Switched the controls of W and S keys, W now decreases grid height and S increases grid height, thus aligning the controls
+to visual placement of the grid
+-Added Jupyter Notebook to analyze seed params easily and in an interactive environment, and dump them into CSV files
+
+V 3.0
+-Added various params, accessed by pressing P.
+-Added functionality to skip seeds in chunks of 0xFFFF by pressing up/down key.
+-Expanded seed menu to enter larger seeds
+
+V 2.5
+-Bug fixes
+
 V 2.0
 -Switched to hex representation for seed number
 -Program is now independent of number of possible states, limits overflow by checking size of seed number with cells,

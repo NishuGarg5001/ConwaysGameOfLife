@@ -3,15 +3,14 @@
 
 #include <iostream>
 #include <vector>
-#include <deque>
 #include <unordered_map>
+#include <map>
 #include <algorithm>
-#include <optional>
 #include <array>
-#include <cmath>
+#include <set>
+#include <fstream>
 #include <SDL3/SDL.h>
 #include <SDL3_ttf/SDL_ttf.h>
-#include <SDL3_image/SDL_image.h>
 
 
 //screen dimensions
@@ -23,14 +22,14 @@ constexpr const char* FONT_PATH = "assets/VT323-Regular.ttf";
 constexpr float FONT_SIZE = 24;
 
 //time constants
-constexpr Uint64 TICK = 1000;
+constexpr Uint64 TICK = 100;
 
 //menu dimensions
 constexpr size_t MAIN_MENU_BOX_WIDTH = 120;
 constexpr size_t MAIN_MENU_BOX_HEIGHT = static_cast<size_t>(FONT_SIZE * 2.0f + 0.2f * FONT_SIZE);
 constexpr size_t PAUSE_MENU_BOX_WIDTH = 205;
 constexpr size_t PAUSE_MENU_BOX_HEIGHT = static_cast<size_t>(FONT_SIZE * 4.0f + 0.2f * FONT_SIZE);
-constexpr size_t SEED_MENU_BOX_WIDTH = 205;
+constexpr size_t SEED_MENU_BOX_WIDTH = 700;
 constexpr size_t SEED_MENU_BOX_HEIGHT = static_cast<size_t>(FONT_SIZE * 2.0f + 0.2f * FONT_SIZE);
 
 //pixel size
