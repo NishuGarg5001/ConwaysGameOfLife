@@ -117,8 +117,7 @@ class Simulation
                                     if(main_menu_item_name == "Simulate")
                                     {
                                         code_state = SimulationState::RUNNING;
-                                        if (main_menu_item_name == "Simulate")
-                                            newSim();
+                                        newSim();
                                     }
                                     else
                                         code_state = SimulationState::QUIT;
@@ -227,22 +226,22 @@ class Simulation
                             {
                                 if(event.key.key == SDLK_LEFT)
                                 {
-                                    if(seed_counter != "0")
+                                    if(!simulation_state && seed_counter != "0")
                                         setSeed(subtractHexNumbers(seed_counter, "1"));
                                 }
                                 else if(event.key.key == SDLK_RIGHT)
                                 {
-                                    if(hexToBinary(addHexNumbers(seed_counter, "1")).size() <= cells)
+                                    if(!simulation_state && hexToBinary(addHexNumbers(seed_counter, "1")).size() <= cells)
                                         setSeed(addHexNumbers(seed_counter, "1"));
                                 }
                                 else if(event.key.key == SDLK_UP)
                                 {
-                                    if(hexToBinary(addHexNumbers(seed_counter, "FFFF")).size() <= cells)
+                                    if(!simulation_state && hexToBinary(addHexNumbers(seed_counter, "FFFF")).size() <= cells)
                                         setSeed(addHexNumbers(seed_counter, "FFFF"));
                                 }
                                 else if(event.key.key == SDLK_DOWN)
                                 {
-                                    if(seed_counter.size() > 4 || (seed_counter.size() == 4 && hex_to_decimal_map.at(seed_counter[0]) == 15 && hex_to_decimal_map.at(seed_counter[1]) == 15 && hex_to_decimal_map.at(seed_counter[2]) == 15 && hex_to_decimal_map.at(seed_counter[3]) == 15))
+                                    if(!simulation_state && (seed_counter.size() > 4 || (seed_counter.size() == 4 && hex_to_decimal_map.at(seed_counter[0]) == 15 && hex_to_decimal_map.at(seed_counter[1]) == 15 && hex_to_decimal_map.at(seed_counter[2]) == 15 && hex_to_decimal_map.at(seed_counter[3]) == 15)))
                                         setSeed(subtractHexNumbers(seed_counter, "FFFF"));
                                 }
                                 else if(event.key.key == SDLK_W)
@@ -407,16 +406,13 @@ class Simulation
 
         void setSeedFromMouse(int x, int y)
         {
-            if((x >= grid_width * PIXEL_SIZE) && (y >= grid_height * PIXEL_SIZE))
+            size_t col = x / PIXEL_SIZE;
+            size_t row = y / PIXEL_SIZE;
+            if(row >= grid_height || col >= grid_width)
                 return;
-            for(size_t i=0; i<grid_height; i++)
-                for(size_t j=0; j<grid_width; j++)
-                    if((x > j*PIXEL_SIZE) && (x < (j+1)*PIXEL_SIZE) && (y > i*PIXEL_SIZE) && (y < (i+1)*PIXEL_SIZE))
-                    {
-                        life_grid[i][j] = (life_grid[i][j] != 1);
-                        seed_counter_binary[i*grid_width + j] = char((seed_counter_binary[i*grid_width + j] != '1') + '0');
-                        break;
-                    }
+            life_grid[row][col] ^= 1;
+            size_t idx = row*grid_width + col;
+            seed_counter_binary[idx] = (seed_counter_binary[idx] == '1') ? '0' : '1';
             seed_counter = binaryToHex(seed_counter_binary);
             epoch = 1;
             resetParams();

@@ -18,6 +18,9 @@ Controls:
 1.Enter to select a menu item, start/stop simulation.
 2.UP/DOWN arrow keys to move through menu items or increase/decrease seeds in chunks of 0xFFFF.
 3.LEFT/RIGHT arrow keys to decrease/increase seeds.
+Note:- Changing seeds requires simulation to be stopped first. This is for internal consistency
+and to prevent unnecessary interaction between variables. In no case would one want to continuously
+change seeds while simulating.
 4.WASD keys to adjust grid size.
 5.Press 'R' to reset current seed to original configuration.
 6.Press 'P' to evaluate parameters for the current seed.

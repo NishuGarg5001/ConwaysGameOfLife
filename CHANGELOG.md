@@ -1,3 +1,7 @@
+V 4.3
+-Mouse optimisations
+-Changing seed now requires simulation to be off first
+
 V 4.0
 -Fixed some functions to be less-clashing and more tuned to one specific task
 -Added functionality to change simulation speed using numbers keys
