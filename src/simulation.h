@@ -606,7 +606,7 @@ class Simulation
                     text3 += " updates/sec";
                     size_t w3 = getTextLen(text3);
                     
-                    std::string text4 = "Epoch: " + std::to_string(generation);
+                    std::string text4 = "Generation: " + std::to_string(generation);
                     size_t w4 = getTextLen(text4);
 
                     std::string text5 = "Lifetime: " + lifetime;

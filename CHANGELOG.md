@@ -1,3 +1,7 @@
+V 4.5
+-Changed epoch to generation in on-screen text
+-Updated Jupyter Notebook
+
 V 4.4
 -Changed some terminologies, making them more consistent with convention
 
