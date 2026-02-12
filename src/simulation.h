@@ -65,10 +65,11 @@ class Simulation
     size_t grid_width = 8;
     size_t grid_height = 8;
     size_t cells = grid_width * grid_height;
-    size_t epoch = 1;
+    size_t generation = 1;
     std::string lifetime = "N/A";
     std::string period = "N/A";
-    std::string period_class = "N/A";
+    std::string main_class = "N/A";
+    std::string sub_class = "N/A";
     std::string seed_counter = "0";
     std::string seed_counter_binary = "0";
     bool simulation_state = false;
@@ -358,14 +359,15 @@ class Simulation
         {
             lifetime = "N/A";
             period = "N/A";
-            period_class = "N/A";
+            main_class = "N/A";
+            sub_class = "N/A";
         }
 
         void newSim()
         {
             seed_counter = "0";
             seed_counter_binary = std::string(cells, '0');
-            epoch = 1;
+            generation = 1;
             resetParams();
             simulation_state = false;
             life_grid = std::vector(grid_height, std::vector<int>(grid_width, 0));
@@ -384,14 +386,14 @@ class Simulation
 
         void resetSeed()
         {
-            epoch = 1;
+            generation = 1;
             setSeedToGrid(life_grid);
             state_buffer = std::vector(grid_height, std::vector<int>(grid_width, 0));
         }
 
         void setSeed(std::string x)
         {
-            epoch = 1;
+            generation = 1;
             resetParams();
 
             seed_counter = x;
@@ -414,7 +416,7 @@ class Simulation
             size_t idx = row*grid_width + col;
             seed_counter_binary[idx] = (seed_counter_binary[idx] == '1') ? '0' : '1';
             seed_counter = binaryToHex(seed_counter_binary);
-            epoch = 1;
+            generation = 1;
             resetParams();
             state_buffer = std::vector(grid_height, std::vector<int>(grid_width, 0));
         }
@@ -444,6 +446,8 @@ class Simulation
             if(!pre_check)
             {
                 lifetime = "0";
+                main_class = "N/A";
+                sub_class = "N/A";
                 period = "N/A";
                 return;
             }
@@ -471,18 +475,20 @@ class Simulation
                 {
                     lifetime = std::to_string(counter);
                     period = "N/A";
-                    period_class = "N/A";
+                    main_class = "Transient";
+                    sub_class = "N/A";
                     break;
                 }
 
                 if (seen_map.count(virtual_state_buffer))
                 {
-                    lifetime = "Persistent from Epoch " + std::to_string(counter) + " onwards";
+                    lifetime = "Oscillating from Generation " + std::to_string(counter) + " onwards";
+                    main_class = "Oscillator";
                     int x = counter - seen_map[virtual_state_buffer];
                     if(x == 1)
-                        period_class = "Still Life";
+                        sub_class = "Still Life";
                     else
-                        period_class = "Oscillator";
+                        sub_class = "Oscillator";
                     period = std::to_string(x);
                     break;
                 }
@@ -527,7 +533,7 @@ class Simulation
         {
             evaluateState(life_grid, state_buffer);
             life_grid = state_buffer;
-            epoch++;
+            generation++;
         }
 
         size_t getTextLen(const std::string& text) const noexcept
@@ -600,17 +606,20 @@ class Simulation
                     text3 += " updates/sec";
                     size_t w3 = getTextLen(text3);
                     
-                    std::string text4 = "Epoch: " + std::to_string(epoch);
+                    std::string text4 = "Epoch: " + std::to_string(generation);
                     size_t w4 = getTextLen(text4);
 
                     std::string text5 = "Lifetime: " + lifetime;
                     size_t w5 = getTextLen(text5);
                     
-                    std::string text6 = "Class: " + period_class;
+                    std::string text6 = "Class: " + main_class;
                     size_t w6 = getTextLen(text6);
 
-                    std::string text7 = "Period: " + period;
+                    std::string text7 = "Sub Class: " + sub_class;
                     size_t w7 = getTextLen(text7);
+
+                    std::string text8 = "Period: " + period;
+                    size_t w8 = getTextLen(text8);
 
                     if(is_black_theme)
                     {
@@ -621,6 +630,7 @@ class Simulation
                         drawText(text5, static_cast<float>(SCREEN_WIDTH - 1 - w5), FONT_SIZE*4, BLACK);
                         drawText(text6, static_cast<float>(SCREEN_WIDTH - 1 - w6), FONT_SIZE*5, BLACK);
                         drawText(text7, static_cast<float>(SCREEN_WIDTH - 1 - w7), FONT_SIZE*6, BLACK);
+                        drawText(text8, static_cast<float>(SCREEN_WIDTH - 1 - w8), FONT_SIZE*7, BLACK);
                     }
                     else
                     {
@@ -631,6 +641,7 @@ class Simulation
                         drawText(text5, static_cast<float>(SCREEN_WIDTH - 1 - w5), FONT_SIZE*4, WHITE);
                         drawText(text6, static_cast<float>(SCREEN_WIDTH - 1 - w6), FONT_SIZE*5, WHITE);
                         drawText(text7, static_cast<float>(SCREEN_WIDTH - 1 - w7), FONT_SIZE*6, WHITE);
+                        drawText(text8, static_cast<float>(SCREEN_WIDTH - 1 - w8), FONT_SIZE*7, WHITE);
                     }
 
                     SDL_FRect dst;

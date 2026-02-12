@@ -1,3 +1,6 @@
+V 4.4
+-Changed some terminologies, making them more consistent with convention
+
 V 4.3
 -Mouse optimisations
 -Changing seed now requires simulation to be off first
