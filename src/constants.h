@@ -21,9 +21,6 @@ constexpr size_t SCREEN_HEIGHT = 768;
 constexpr const char* FONT_PATH = "assets/VT323-Regular.ttf";
 constexpr float FONT_SIZE = 24;
 
-//time constants
-constexpr Uint64 TICK = 100;
-
 //menu dimensions
 constexpr size_t MAIN_MENU_BOX_WIDTH = 120;
 constexpr size_t MAIN_MENU_BOX_HEIGHT = static_cast<size_t>(FONT_SIZE * 2.0f + 0.2f * FONT_SIZE);
@@ -44,9 +41,6 @@ constexpr SDL_Color ORANGE = {255, 165, 0, 255};
 constexpr SDL_Color RED = {255, 0, 0, 255};
 constexpr SDL_Color INVENTORY_BOX_COLOR = {187, 117, 71, 255};
 constexpr SDL_Color INVENTORY_LINE_COLOR = {91, 49, 56, 255};
-
-//theme
-constexpr std::string theme = "white";
 
 enum class SimulationState : int
 {
@@ -75,6 +69,26 @@ const std::unordered_map<char, std::string> hex_to_binary_map
     {'D', "1101"},
     {'E', "1110"},
     {'F', "1111"},
+};
+
+const std::unordered_map<std::string, char> binary_to_hex_map
+{
+    {"0000", '0'},
+    {"0001", '1'},
+    {"0010", '2'},
+    {"0011", '3'},
+    {"0100", '4'},
+    {"0101", '5'},
+    {"0110", '6'},
+    {"0111", '7'},
+    {"1000", '8'},
+    {"1001", '9'},
+    {"1010", 'A'},
+    {"1011", 'B'},
+    {"1100", 'C'},
+    {"1101", 'D'},
+    {"1110", 'E'},
+    {"1111", 'F'},
 };
 
 const std::unordered_map<char, int> hex_to_decimal_map

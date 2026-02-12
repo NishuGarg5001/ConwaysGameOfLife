@@ -61,6 +61,7 @@ class Simulation
     std::string command = "";
     int fps = 60;
     int frame_time = 1000 / fps;
+    size_t tick = 1000;
     size_t grid_width = 8;
     size_t grid_height = 8;
     size_t cells = grid_width * grid_height;
@@ -84,8 +85,7 @@ class Simulation
         state_buffer(grid_height, std::vector<int>(grid_width, 0))
         {
             seed_counter_binary.reserve(cells);
-            if(seed_counter_binary.size() < cells)
-                seed_counter_binary = std::string(cells - seed_counter_binary.size(), '0') + seed_counter_binary;
+            seed_counter_binary = std::string(cells, '0');
         }
 
         void handleInput()
@@ -284,10 +284,35 @@ class Simulation
                                         evaluateParams();
                                         break;
                                     }
+                                    case SDLK_1:
+                                    {
+                                        tick = 1000;
+                                        break;
+                                    }
+                                    case SDLK_2:
+                                    {
+                                        tick = 500;
+                                        break;
+                                    }
+                                    case SDLK_3:
+                                    {
+                                        tick = 200;
+                                        break;
+                                    }
+                                    case SDLK_4:
+                                    {
+                                        tick = 100;
+                                        break;
+                                    }
                                     default:
                                     break;
                                 }
                             }
+                        }
+                        else if(event.type == SDL_EVENT_MOUSE_BUTTON_DOWN)
+                        {
+                            if(!simulation_state && event.button.button == SDL_BUTTON_LEFT)
+                                setSeedFromMouse(event.button.x, event.button.y);
                         }
                         break;
                     }
@@ -318,46 +343,84 @@ class Simulation
             return res;
         }
 
-        void newSim()
+        std::string binaryToHex(std::string bin)
         {
-            seed_counter = "0";
-            epoch = 1;
+            std::string res = "";
+            while(bin.size() % 4 != 0)
+                bin = "0" + bin;
+            for(size_t i=0; i<bin.size()/4; i++)
+                res.push_back(binary_to_hex_map.at(bin.substr(i*4, 4)));
+            while(res.size() >= 2 && res[0] == '0')
+                res.erase(0, 1);
+            return res;
+        }
+
+        void resetParams()
+        {
             lifetime = "N/A";
             period = "N/A";
             period_class = "N/A";
+        }
+
+        void newSim()
+        {
+            seed_counter = "0";
+            seed_counter_binary = std::string(cells, '0');
+            epoch = 1;
+            resetParams();
             simulation_state = false;
             life_grid = std::vector(grid_height, std::vector<int>(grid_width, 0));
             state_buffer = std::vector(grid_height, std::vector<int>(grid_width, 0));
         }
 
-        void resetSeed()
+        void setSeedToGrid(std::vector<std::vector<int>>& grid)
         {
-            epoch = 1;
-            simulation_state = false;
             for(size_t i = cells; i-- > 0;)
             {
                 size_t row = i / grid_width;
                 size_t col = i % grid_width;
-                life_grid[row][col] = (seed_counter_binary[i] == '1');
+                grid[row][col] = (seed_counter_binary[i] == '1');
             }
+        }
+
+        void resetSeed()
+        {
+            epoch = 1;
+            setSeedToGrid(life_grid);
             state_buffer = std::vector(grid_height, std::vector<int>(grid_width, 0));
         }
 
         void setSeed(std::string x)
         {
-            newSim();
+            epoch = 1;
+            resetParams();
+
             seed_counter = x;
             seed_counter_binary = hexToBinary(seed_counter);
 
             if(seed_counter_binary.size() < cells)
                 seed_counter_binary = std::string(cells - seed_counter_binary.size(), '0') + seed_counter_binary;
 
-            for(size_t i = cells; i-- > 0;)
-            {
-                size_t row = i / grid_width;
-                size_t col = i % grid_width;
-                life_grid[row][col] = (seed_counter_binary[i] == '1');
-            }
+            setSeedToGrid(life_grid);
+            state_buffer = std::vector(grid_height, std::vector<int>(grid_width, 0));
+        }
+
+        void setSeedFromMouse(int x, int y)
+        {
+            if((x >= grid_width * PIXEL_SIZE) && (y >= grid_height * PIXEL_SIZE))
+                return;
+            for(size_t i=0; i<grid_height; i++)
+                for(size_t j=0; j<grid_width; j++)
+                    if((x > j*PIXEL_SIZE) && (x < (j+1)*PIXEL_SIZE) && (y > i*PIXEL_SIZE) && (y < (i+1)*PIXEL_SIZE))
+                    {
+                        life_grid[i][j] = (life_grid[i][j] != 1);
+                        seed_counter_binary[i*grid_width + j] = char((seed_counter_binary[i*grid_width + j] != '1') + '0');
+                        break;
+                    }
+            seed_counter = binaryToHex(seed_counter_binary);
+            epoch = 1;
+            resetParams();
+            state_buffer = std::vector(grid_height, std::vector<int>(grid_width, 0));
         }
 
         void changeGrid(size_t x, size_t y)
@@ -370,16 +433,18 @@ class Simulation
 
         void evaluateParams()
         {
-            resetSeed();
+            std::vector<std::vector<int>> virtual_life_grid = std::vector(grid_height, std::vector<int>(grid_width, 0));
+            setSeedToGrid(virtual_life_grid);
 
             bool pre_check = false;
-            for(const auto& row : life_grid)
+            for(const auto& row : virtual_life_grid)
                 for(int v : row)
                     if(v == 1)
                     {
                         pre_check = true;
                         break;
                     }
+
             if(!pre_check)
             {
                 lifetime = "0";
@@ -387,8 +452,7 @@ class Simulation
                 return;
             }
 
-            std::vector<std::vector<int>> virtual_life_grid = life_grid;
-            std::vector<std::vector<int>> virtual_state_buffer = state_buffer;
+            std::vector<std::vector<int>> virtual_state_buffer = std::vector(grid_height, std::vector<int>(grid_width, 0));
             std::map<std::vector<std::vector<int>>, size_t> seen_map;
             
             size_t counter = 0;
@@ -531,18 +595,26 @@ class Simulation
                     else
                         text2 = "Simulation: OFF";
                     size_t w2 = getTextLen(text2);
-                    
-                    std::string text3 = "Epoch: " + std::to_string(epoch);
+
+                    std::string text3 = "Simulation Speed: ";
+                    if(!simulation_state)
+                        text3 += "0";
+                    else
+                        text3 += std::to_string(1000.0f/static_cast<float>(tick)).substr(0, 4);
+                    text3 += " updates/sec";
                     size_t w3 = getTextLen(text3);
-
-                    std::string text4 = "Lifetime: " + lifetime;
-                    size_t w4 = getTextLen(text4);
                     
-                    std::string text5 = "Class: " + period_class;
-                    size_t w5 = getTextLen(text5);
+                    std::string text4 = "Epoch: " + std::to_string(epoch);
+                    size_t w4 = getTextLen(text4);
 
-                    std::string text6 = "Period: " + period;
+                    std::string text5 = "Lifetime: " + lifetime;
+                    size_t w5 = getTextLen(text5);
+                    
+                    std::string text6 = "Class: " + period_class;
                     size_t w6 = getTextLen(text6);
+
+                    std::string text7 = "Period: " + period;
+                    size_t w7 = getTextLen(text7);
 
                     if(is_black_theme)
                     {
@@ -552,6 +624,7 @@ class Simulation
                         drawText(text4, static_cast<float>(SCREEN_WIDTH - 1 - w4), FONT_SIZE*3, BLACK);
                         drawText(text5, static_cast<float>(SCREEN_WIDTH - 1 - w5), FONT_SIZE*4, BLACK);
                         drawText(text6, static_cast<float>(SCREEN_WIDTH - 1 - w6), FONT_SIZE*5, BLACK);
+                        drawText(text7, static_cast<float>(SCREEN_WIDTH - 1 - w7), FONT_SIZE*6, BLACK);
                     }
                     else
                     {
@@ -561,6 +634,7 @@ class Simulation
                         drawText(text4, static_cast<float>(SCREEN_WIDTH - 1 - w4), FONT_SIZE*3, WHITE);
                         drawText(text5, static_cast<float>(SCREEN_WIDTH - 1 - w5), FONT_SIZE*4, WHITE);
                         drawText(text6, static_cast<float>(SCREEN_WIDTH - 1 - w6), FONT_SIZE*5, WHITE);
+                        drawText(text7, static_cast<float>(SCREEN_WIDTH - 1 - w7), FONT_SIZE*6, WHITE);
                     }
 
                     SDL_FRect dst;
@@ -641,11 +715,11 @@ class Simulation
                 accumulator += delta;
 
                 handleInput();
-                while(code_state == SimulationState::RUNNING && accumulator >= TICK)
+                while(code_state == SimulationState::RUNNING && accumulator >= tick)
                 {
                     if(simulation_state)
                         updateState();
-                    accumulator -= TICK;
+                    accumulator -= tick;
                 }
 
                 renderFrame();

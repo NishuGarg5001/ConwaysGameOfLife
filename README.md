@@ -21,9 +21,15 @@ Controls:
 4.WASD keys to adjust grid size.
 5.Press 'R' to reset current seed to original configuration.
 6.Press 'P' to evaluate parameters for the current seed.
+7.Press 1-4 numbers to change simulation speed, 
+    1 is default at 1 update / s
+    2 is 2x speed
+    3 is 5x speed
+    4 is 10x speed
+8.Left mouse click to toggle individual cells on or off.
 
 Note:
-Best suited for a maximum of 15x15 grid. The seeds in hexadecimal starting becoming too lengthy after that.
+Best suited for a maximum of 19x19 grid. The seeds in hexadecimal starting becoming too lengthy after that.
 May shift to base32 or base64 in future for more efficient seed packing and to support even larger grid.
 
 Build using (g++ example):

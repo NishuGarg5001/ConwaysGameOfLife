@@ -1,3 +1,10 @@
+V 4.0
+-Fixed some functions to be less-clashing and more tuned to one specific task
+-Added functionality to change simulation speed using numbers keys
+-Simulation now shows simulation speed
+-Added mouse functionality, ability to toggle cells by mouse click
+-Updated README.md
+
 V 3.1
 -Fixed seed notation to correctly show row x column x seed hex instead of wrongly showing column x row x seed hex
 -Switched the controls of W and S keys, W now decreases grid height and S increases grid height, thus aligning the controls
