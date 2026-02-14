@@ -65,7 +65,7 @@ class Simulation
     size_t grid_width = 8;
     size_t grid_height = 8;
     size_t cells = grid_width * grid_height;
-    size_t generation = 1;
+    size_t generation = 0;
     std::string lifetime = "N/A";
     std::string period = "N/A";
     std::string main_class = "N/A";
@@ -304,6 +304,16 @@ class Simulation
                                         tick = 100;
                                         break;
                                     }
+                                    case SDLK_5:
+                                    {
+                                        tick = 50;
+                                        break;
+                                    }
+                                    case SDLK_6:
+                                    {
+                                        tick = 25;
+                                        break;
+                                    }
                                     default:
                                     break;
                                 }
@@ -367,7 +377,7 @@ class Simulation
         {
             seed_counter = "0";
             seed_counter_binary = std::string(cells, '0');
-            generation = 1;
+            generation = 0;
             resetParams();
             simulation_state = false;
             life_grid = std::vector(grid_height, std::vector<int>(grid_width, 0));
@@ -386,14 +396,14 @@ class Simulation
 
         void resetSeed()
         {
-            generation = 1;
+            generation = 0;
             setSeedToGrid(life_grid);
             state_buffer = std::vector(grid_height, std::vector<int>(grid_width, 0));
         }
 
         void setSeed(std::string x)
         {
-            generation = 1;
+            generation = 0;
             resetParams();
 
             seed_counter = x;
@@ -416,7 +426,7 @@ class Simulation
             size_t idx = row*grid_width + col;
             seed_counter_binary[idx] = (seed_counter_binary[idx] == '1') ? '0' : '1';
             seed_counter = binaryToHex(seed_counter_binary);
-            generation = 1;
+            generation = 0;
             resetParams();
             state_buffer = std::vector(grid_height, std::vector<int>(grid_width, 0));
         }
@@ -482,7 +492,6 @@ class Simulation
 
                 if (seen_map.count(virtual_state_buffer))
                 {
-                    lifetime = "Oscillating from Generation " + std::to_string(counter) + " onwards";
                     main_class = "Oscillator";
                     int x = counter - seen_map[virtual_state_buffer];
                     if(x == 1)
@@ -490,6 +499,7 @@ class Simulation
                     else
                         sub_class = "Oscillator";
                     period = std::to_string(x);
+                    lifetime = std::to_string(counter - x);
                     break;
                 }
 

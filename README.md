@@ -29,6 +29,8 @@ change seeds while simulating.
     2 is 2x speed
     3 is 5x speed
     4 is 10x speed
+    5 is 20x speed
+    6 is 40x speed
 8.Left mouse click to toggle individual cells on or off.
 
 Note:

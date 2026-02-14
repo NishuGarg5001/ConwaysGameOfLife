@@ -1,3 +1,9 @@
+V 4.6
+-Bugfixes, generation text now properly starts at 0 as is the convention. Lifetime for oscillators
+is now correctly taken as generation number when periodicity starts instead of when 1st period ends. (lifetime = lifetime in previous version - period) now basically. For transients, lifetime is the generation number on which all cells die. Physically, it represents the number of generations the cells were alive. For example, if a config starts at generation 0 and completely dies on generation 5, the lifetime is 5 and physically the cells DID live for 5 generations (0, 1, 2, 3 and 4).
+-Now supports 20x and 40x simulation speed.
+-Updated README.md
+
 V 4.5
 -Changed epoch to generation in on-screen text
 -Updated Jupyter Notebook
